@@ -62,3 +62,19 @@ tmp/
 secrets/
 *.key
 *.pem
+
+# Node modules and frontend build
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Uploads and user data
+uploads/
+*.db
+*.sqlite
+*.sqlite3
+
+# OS files
+Thumbs.db
+desktop.ini
