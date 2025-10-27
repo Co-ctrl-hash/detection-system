@@ -33,7 +33,10 @@ wandb/
 lightning_logs/
 
 # Ignore IDE and editor files
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/README.md
 .idea/
 *.swp
 *.swo
