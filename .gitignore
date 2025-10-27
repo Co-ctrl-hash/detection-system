@@ -1,0 +1,64 @@
+# Ignore Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Ignore YOLOv7 external repo (cloned separately)
+external/yolov7/
+
+# Ignore model weights and checkpoints (large files)
+models/*.pt
+models/*.pth
+models/*.onnx
+models/*.engine
+models/*.trt
+models/checkpoints/
+
+# Ignore dataset files (download separately)
+data/raw/
+data/plates/images/
+data/plates/labels/
+*.zip
+*.tar.gz
+
+# Ignore training/inference outputs
+runs/
+wandb/
+lightning_logs/
+
+# Ignore IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Ignore logs
+*.log
+logs/
+
+# Ignore test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Ignore temporary files
+*.tmp
+temp/
+tmp/
+
+# Ignore Docker build context (except Dockerfiles)
+.dockerignore
+
+# Ignore sensitive files
+.env
+secrets/
+*.key
+*.pem

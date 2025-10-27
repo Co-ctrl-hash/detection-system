@@ -1,0 +1,41 @@
+# Project Metadata
+
+project_name: "Real-Time Number Plate Detection"
+version: "1.0.0"
+author: "InnovateIntern"
+contact: "hello@innovateintern.com"
+website: "www.innovateintern.com"
+
+# Model Information
+model_architecture: "YOLOv7"
+ocr_engine: "EasyOCR"
+framework: "PyTorch"
+
+# Datasets
+supported_datasets:
+  - CCPD
+  - UFPR-ALPR
+  - OpenImages
+
+# Deployment Targets
+deployment_platforms:
+  - NVIDIA GPU (CUDA 11.8+)
+  - CPU (ONNX Runtime)
+  - NVIDIA Jetson (TensorRT)
+  - Intel NCS2 (OpenVINO)
+  - Docker (GPU/CPU)
+
+# Performance Targets
+performance_targets:
+  detection_map_05: 0.85
+  ocr_character_accuracy: 0.90
+  inference_fps_gpu: 15
+  inference_fps_jetson: 10
+
+# Legal & Ethics
+privacy_compliance:
+  - GDPR (EU)
+  - CCPA (California)
+  - DPDP Act 2023 (India)
+
+license: "MIT (with GPL-3.0 for YOLOv7 component)"

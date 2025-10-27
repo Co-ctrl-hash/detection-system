@@ -1,0 +1,18 @@
+# YOLOv7 Dataset Configuration for Number Plate Detection
+
+# Dataset paths (relative to this file or absolute)
+train: ../images/train  # training images folder
+val: ../images/val      # validation images folder
+test: ../images/test    # test images folder (optional)
+
+# Number of classes
+nc: 1
+
+# Class names
+names: ['plate']
+
+# Notes:
+# - Place images in data/images/{train,val,test}/
+# - Place corresponding YOLO format labels in data/labels/{train,val,test}/
+# - Each label file should have same name as image (e.g., img001.jpg -> img001.txt)
+# - Label format per line: <class_id> <x_center> <y_center> <width> <height> (normalized 0-1)

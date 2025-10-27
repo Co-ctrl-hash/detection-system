@@ -1,0 +1,36 @@
+# YOLOv7 Training Configuration for Number Plate Detection
+
+# Path to data.yaml (YOLO format dataset definition)
+data_yaml: data/plates/data.yaml
+
+# Model configuration
+cfg: external/yolov7/cfg/training/yolov7.yaml  # or yolov7-tiny.yaml for smaller model
+weights: models/yolov7.pt  # pretrained COCO weights (transfer learning)
+
+# Hyperparameters file
+hyp: external/yolov7/data/hyp.scratch.p5.yaml
+
+# Training parameters
+epochs: 150
+batch_size: 16  # adjust based on GPU memory
+img_size: 640  # try 1280 for better small-plate mAP
+workers: 8
+device: "0"  # GPU id or "cpu"
+
+# Experiment name
+name: plate_detector_v1
+
+# Options
+cache_images: false  # cache images for faster training (requires RAM)
+multi_scale: true  # multi-scale training (improves robustness)
+rect: false  # rectangular training
+adam: false  # use Adam optimizer (default: SGD)
+sync_bn: false  # sync batch norm for multi-GPU
+nosave: false  # only save final checkpoint
+notest: false  # only test final epoch
+evolve: false  # evolve hyperparameters
+
+# Notes:
+# - Ensure data.yaml points to your annotated dataset
+# - Start with pretrained weights for faster convergence
+# - Monitor val mAP and adjust learning rate/batch size as needed

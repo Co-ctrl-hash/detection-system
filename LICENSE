@@ -1,0 +1,56 @@
+MIT License
+
+Copyright (c) 2025 Number Plate Detection Project
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Third-Party Licenses
+
+This project uses the following third-party software:
+
+### YOLOv7
+- License: GPL-3.0
+- Repository: https://github.com/WongKinYiu/yolov7
+- Note: YOLOv7 is licensed under GPL-3.0. If you distribute this software, you must comply with GPL-3.0 terms.
+
+### EasyOCR
+- License: Apache-2.0
+- Repository: https://github.com/JaidedAI/EasyOCR
+
+### PyTorch
+- License: BSD-3-Clause
+- Repository: https://github.com/pytorch/pytorch
+
+### OpenCV
+- License: Apache-2.0
+- Repository: https://github.com/opencv/opencv
+
+---
+
+## Dataset Licenses
+
+When using public datasets, ensure compliance with their respective licenses:
+
+- **CCPD Dataset**: Check repository for license terms
+- **UFPR-ALPR**: Academic use only (verify current terms)
+- **OpenImages**: CC BY 4.0 (with specific attributions)
+
+Always review and comply with dataset licenses before commercial use.
