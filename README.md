@@ -4,8 +4,24 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![React](https://img.shields.io/badge/React-18+-61dafb.svg)](https://reactjs.org/)
 [![YOLOv7](https://img.shields.io/badge/YOLOv7-Official-green.svg)](https://github.com/WongKinYiu/yolov7)
+[![CI/CD](https://github.com/Co-ctrl-hash/detection-system/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/Co-ctrl-hash/detection-system/actions)
 
-A **full-stack production-ready system** for real-time license plate detection and recognition. Features a **React.js frontend**, **Flask/FastAPI backend**, **YOLOv7 detection model**, and **SQL database** for comprehensive traffic monitoring, surveillance, toll collection, and parking management.
+> **Production-Ready AI System** for Automated License Plate Recognition (ALPR) with Real-Time Processing
+
+A **full-stack production-ready system** for real-time license plate detection and recognition. Features a **React.js frontend**, **Flask backend**, **YOLOv7 detection model**, and **SQL/MongoDB database** for comprehensive traffic monitoring, surveillance, toll collection, and parking management.
+
+---
+
+## 👨‍💻 **Author**
+
+**Harsh Deep**  
+AI/ML Engineer | Full-Stack Developer  
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=flat&logo=linkedin)](https://www.linkedin.com/in/harsh-deep-a2b104264/)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=flat&logo=github)](https://github.com/Co-ctrl-hash)
+
+**Project Repository:** [detection-system](https://github.com/Co-ctrl-hash/detection-system)
+
+---
 
 ## 🎯 Key Features
 
@@ -570,12 +586,19 @@ See [ETHICS.md](docs/ETHICS.md) for detailed guidelines.
 - [CCPD Dataset](https://github.com/detectRecog/CCPD)
 - [UFPR-ALPR Dataset](https://web.inf.ufpr.br/vri/databases/ufpr-alpr/)
 
-## 📧 Contact
+## 📧 Contact & Connect
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/plate-detection-yolov7/issues)
-- **Email**: hello@innovateintern.com
-- **Website**: www.innovateintern.com
+**Harsh Deep** - AI/ML Engineer & Full-Stack Developer
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/harsh-deep-a2b104264/)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github)](https://github.com/Co-ctrl-hash)
+[![Email](https://img.shields.io/badge/Email-Contact-D14836?style=for-the-badge&logo=gmail)](mailto:harshdeep@example.com)
+
+- **Issues**: [GitHub Issues](https://github.com/Co-ctrl-hash/detection-system/issues)
+- **Project**: [detection-system](https://github.com/Co-ctrl-hash/detection-system)
 
 ---
 
-**Built with ❤️ for traffic monitoring and surveillance applications**
+**⭐ If you found this project helpful, please give it a star!**
+
+**Built with ❤️ for Intelligent Traffic Monitoring & Surveillance Applications**

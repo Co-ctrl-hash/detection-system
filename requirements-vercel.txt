@@ -1,0 +1,13 @@
+# Minimal requirements for Vercel deployment (size constraints)
+# Note: YOLOv7 model is too large for serverless deployment
+# This is a lightweight API-only deployment
+
+flask==3.1.2
+flask-cors==6.0.1
+flask-sqlalchemy==3.1.1
+python-dotenv==1.0.0
+pillow==10.1.0
+numpy==1.24.0
+
+# For full functionality, deploy on a VPS or container platform
+# See DEPLOYMENT.md for alternatives

@@ -6,6 +6,7 @@ Supports transfer learning from pretrained COCO weights.
 Usage:
 python src/train.py --config configs/train_config.yaml
 """
+
 from __future__ import annotations
 
 import argparse
@@ -28,17 +29,28 @@ def run_yolov7_train(yolov7_dir: Path, config: dict):
         raise FileNotFoundError(f"train.py not found in {yolov7_dir}")
 
     cmd = [
-        sys.executable, str(train_py),
-        "--workers", str(config.get("workers", 8)),
-        "--device", str(config.get("device", "0")),
-        "--batch-size", str(config.get("batch_size", 16)),
-        "--epochs", str(config.get("epochs", 100)),
-        "--data", str(config["data_yaml"]),
-        "--img", str(config.get("img_size", 640)),
-        "--cfg", str(config.get("cfg", "cfg/training/yolov7.yaml")),
-        "--weights", str(config.get("weights", "")),
-        "--name", config.get("name", "plate_detector"),
-        "--hyp", str(config.get("hyp", "data/hyp.scratch.p5.yaml")),
+        sys.executable,
+        str(train_py),
+        "--workers",
+        str(config.get("workers", 8)),
+        "--device",
+        str(config.get("device", "0")),
+        "--batch-size",
+        str(config.get("batch_size", 16)),
+        "--epochs",
+        str(config.get("epochs", 100)),
+        "--data",
+        str(config["data_yaml"]),
+        "--img",
+        str(config.get("img_size", 640)),
+        "--cfg",
+        str(config.get("cfg", "cfg/training/yolov7.yaml")),
+        "--weights",
+        str(config.get("weights", "")),
+        "--name",
+        config.get("name", "plate_detector"),
+        "--hyp",
+        str(config.get("hyp", "data/hyp.scratch.p5.yaml")),
     ]
 
     # optional args
@@ -66,8 +78,9 @@ def run_yolov7_train(yolov7_dir: Path, config: dict):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=Path, required=True, help="Path to training config YAML")
-    parser.add_argument("--yolov7-dir", type=Path, default=Path("external/yolov7"),
-                        help="Path to YOLOv7 repo")
+    parser.add_argument(
+        "--yolov7-dir", type=Path, default=Path("external/yolov7"), help="Path to YOLOv7 repo"
+    )
     args = parser.parse_args()
 
     config = load_config(args.config)

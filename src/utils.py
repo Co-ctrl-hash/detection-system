@@ -1,10 +1,13 @@
 """Utility helpers for the demo."""
+
 from __future__ import annotations
 
 from typing import Tuple
 
 
-def yolo_label_to_box(xc: float, yc: float, bw: float, bh: float, img_w: int, img_h: int) -> Tuple[float, float, float, float]:
+def yolo_label_to_box(
+    xc: float, yc: float, bw: float, bh: float, img_w: int, img_h: int
+) -> Tuple[float, float, float, float]:
     """Convert YOLO normalized center-format to pixel box (x1,y1,x2,y2).
 
     xc, yc, bw, bh are in normalized [0,1] relative to image size.

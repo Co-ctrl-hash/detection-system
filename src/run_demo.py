@@ -8,6 +8,7 @@ This script:
 - Reads label files and crops plate regions from the original images
 - Runs EasyOCR on each crop and writes results to CSV
 """
+
 from __future__ import annotations
 
 import argparse
@@ -26,14 +27,22 @@ def run_yolov7_detect(yolov7_dir: Path, weights: Path, source: Path, conf_thres:
     # Build command to call YOLOv7 detect.py
     detect_py = yolov7_dir / "detect.py"
     if not detect_py.exists():
-        raise FileNotFoundError(f"detect.py not found in {yolov7_dir}. Clone the official repo to that path.")
+        raise FileNotFoundError(
+            f"detect.py not found in {yolov7_dir}. Clone the official repo to that path."
+        )
 
-    cmd = [sys.executable, str(detect_py),
-           "--weights", str(weights),
-           "--source", str(source),
-           "--conf", str(conf_thres),
-           "--save-txt",  # saves labels in runs/detect/exp/labels
-           "--save-conf"]
+    cmd = [
+        sys.executable,
+        str(detect_py),
+        "--weights",
+        str(weights),
+        "--source",
+        str(source),
+        "--conf",
+        str(conf_thres),
+        "--save-txt",  # saves labels in runs/detect/exp/labels
+        "--save-conf",
+    ]
 
     print("Running YOLOv7 detect: ", " ".join(cmd))
     subprocess.check_call(cmd)
@@ -43,7 +52,9 @@ def find_latest_run_detect_folder(runs_root: Path) -> Path:
     # YOLOv7 writes to runs/detect/exp, exp1, exp2... Return the latest
     detect_root = runs_root / "detect"
     if not detect_root.exists():
-        raise FileNotFoundError(f"No runs/detect directory found under {runs_root}. Did detection run successfully?")
+        raise FileNotFoundError(
+            f"No runs/detect directory found under {runs_root}. Did detection run successfully?"
+        )
     exps = sorted([p for p in detect_root.iterdir() if p.is_dir()], key=lambda p: p.stat().st_mtime)
     return exps[-1]
 
@@ -57,7 +68,7 @@ def process_labels_and_ocr(run_exp_dir: Path, source: Path, out_csv: Path):
 
     for label_file in labels_dir.glob("*.txt"):
         # corresponding source image name
-        image_name = label_file.stem + label_file.suffix.replace('.txt', '')
+        image_name = label_file.stem + label_file.suffix.replace(".txt", "")
         # YOLOv7 uses original filename (no extension in label file stem is the source filename without ext)
         # We will try to find the source image by stem
         candidates = list(source.parent.glob(label_file.stem + ".*"))
@@ -87,13 +98,15 @@ def process_labels_and_ocr(run_exp_dir: Path, source: Path, out_csv: Path):
                 if crop.size == 0:
                     continue
                 text, conf = ocr_read_plate(crop)
-                rows.append({
-                    "image": str(img_path.name),
-                    "class": cls,
-                    "bbox": f"{x1},{y1},{x2},{y2}",
-                    "plate_text": text,
-                    "plate_conf": conf,
-                })
+                rows.append(
+                    {
+                        "image": str(img_path.name),
+                        "class": cls,
+                        "bbox": f"{x1},{y1},{x2},{y2}",
+                        "plate_text": text,
+                        "plate_conf": conf,
+                    }
+                )
 
     if rows:
         df = pd.DataFrame(rows)
@@ -105,11 +118,20 @@ def process_labels_and_ocr(run_exp_dir: Path, source: Path, out_csv: Path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--yolov7-dir", type=Path, required=True, help="Path to cloned YOLOv7 repo (external/yolov7)")
+    parser.add_argument(
+        "--yolov7-dir",
+        type=Path,
+        required=True,
+        help="Path to cloned YOLOv7 repo (external/yolov7)",
+    )
     parser.add_argument("--weights", type=Path, required=True, help="YOLOv7 weights path (.pt)")
-    parser.add_argument("--source", type=Path, required=True, help="Image or folder or video source")
+    parser.add_argument(
+        "--source", type=Path, required=True, help="Image or folder or video source"
+    )
     parser.add_argument("--conf-thres", type=float, default=0.25)
-    parser.add_argument("--runs-root", type=Path, default=Path("runs"), help="Root runs directory (default: runs)")
+    parser.add_argument(
+        "--runs-root", type=Path, default=Path("runs"), help="Root runs directory (default: runs)"
+    )
 
     args = parser.parse_args()
 

@@ -1,4 +1,5 @@
 """Simple EasyOCR wrapper for plate reading."""
+
 from __future__ import annotations
 
 import numpy as np

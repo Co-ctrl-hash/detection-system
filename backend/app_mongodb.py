@@ -10,6 +10,7 @@ Endpoints:
 - GET /api/stats - Get detection statistics
 - WebSocket /ws/live - Real-time video stream processing
 """
+
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
@@ -121,7 +122,7 @@ def detect_plate():
         if not ok:
             continue
         plate_img_b64 = base64.b64encode(buffer).decode("utf-8")
-        
+
         plate_text = result.get("plate_text", "UNKNOWN")
         detection_doc = DetectionMongo.create(
             plate_number=plate_text,
@@ -246,12 +247,7 @@ def get_detections():
     assert mongo.db is not None, "Database not initialized"
     total = mongo.db.detections.count_documents(query)
     skip = (page - 1) * per_page
-    cursor = (
-        mongo.db.detections.find(query)
-        .sort("_id", -1)
-        .skip(skip)
-        .limit(per_page)
-    )
+    cursor = mongo.db.detections.find(query).sort("_id", -1).skip(skip).limit(per_page)
 
     detections = [DetectionMongo.to_dict(doc) for doc in cursor]
     return jsonify(
@@ -346,7 +342,7 @@ def handle_video_frame(data):
             if not ok:
                 continue
             plate_img_b64 = base64.b64encode(buffer).decode("utf-8")
-            
+
             plate_text = result.get("plate_text", "UNKNOWN")
             detection_doc = DetectionMongo.create(
                 plate_number=plate_text,
