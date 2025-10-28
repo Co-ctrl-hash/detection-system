@@ -30,7 +30,8 @@ def ocr_read_plate(crop: np.ndarray) -> tuple[str, float]:
     if not results:
         return "", 0.0
     # choose the top result by confidence
-    best = max(results, key=lambda r: r[2])
-    text = best[1]
-    conf = float(best[2])
+    # EasyOCR returns list of tuples: (bbox, text, confidence)
+    best = max(results, key=lambda r: r[2])  # type: ignore[index]
+    text: str = best[1]  # type: ignore[index]
+    conf = float(best[2])  # type: ignore[index]
     return text, conf

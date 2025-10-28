@@ -17,12 +17,16 @@ from flask_socketio import SocketIO, emit
 from flask_pymongo import PyMongo
 from datetime import datetime
 from bson import ObjectId
+from dotenv import load_dotenv
 import os
 import cv2
 import numpy as np
 import base64
 from pathlib import Path
 import sys
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -54,7 +58,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # ------------------------------------------------------
 detector = PlateDetector(
     yolov7_weights=os.getenv("MODEL_WEIGHTS", "models/yolov7.pt"),
-    device=os.getenv("DEVICE", "0"),
+    device=os.getenv("DEVICE", "cpu"),
     conf_threshold=float(os.getenv("CONF_THRESHOLD", "0.25")),
 )
 
@@ -69,6 +73,7 @@ upload_dir.mkdir(parents=True, exist_ok=True)
 @app.route("/api/health", methods=["GET"])
 def health_check():
     try:
+        assert mongo.db is not None, "Database not initialized"
         mongo.db.command("ping")
         db_status = "connected"
     except Exception:
@@ -126,6 +131,7 @@ def detect_plate():
             plate_image=plate_img_b64,
         )
 
+        assert mongo.db is not None, "Database not initialized"
         inserted = mongo.db.detections.insert_one(detection_doc)
         detection_records.append(
             {
@@ -199,6 +205,7 @@ def detect_video():
                         bbox=result.get("bbox", [0, 0, 0, 0]),
                         plate_image=plate_img_b64,
                     )
+                    assert mongo.db is not None, "Database not initialized"
                     mongo.db.detections.insert_one(detection_doc)
                     if plate_text:
                         all_detections.append(plate_text)
@@ -236,6 +243,7 @@ def get_detections():
     if camera_id:
         query["camera_id"] = camera_id
 
+    assert mongo.db is not None, "Database not initialized"
     total = mongo.db.detections.count_documents(query)
     skip = (page - 1) * per_page
     cursor = (
@@ -260,6 +268,7 @@ def get_detections():
 @app.route("/api/detections/<detection_id>", methods=["GET"])
 def get_detection(detection_id: str):
     try:
+        assert mongo.db is not None, "Database not initialized"
         doc = mongo.db.detections.find_one({"_id": ObjectId(detection_id)})
         if not doc:
             return jsonify({"error": "Detection not found"}), 404
@@ -271,6 +280,7 @@ def get_detection(detection_id: str):
 @app.route("/api/detections/<detection_id>", methods=["DELETE"])
 def delete_detection(detection_id: str):
     try:
+        assert mongo.db is not None, "Database not initialized"
         result = mongo.db.detections.delete_one({"_id": ObjectId(detection_id)})
         if result.deleted_count == 0:
             return jsonify({"error": "Detection not found"}), 404
@@ -284,6 +294,7 @@ def delete_detection(detection_id: str):
 # ------------------------------------------------------
 @app.route("/api/stats", methods=["GET"])
 def get_stats():
+    assert mongo.db is not None, "Database not initialized"
     total = mongo.db.detections.count_documents({})
     pipeline = [{"$group": {"_id": "$plate_number"}}, {"$count": "unique_plates"}]
     result = list(mongo.db.detections.aggregate(pipeline))
@@ -345,6 +356,7 @@ def handle_video_frame(data):
                 plate_image=plate_img_b64,
             )
 
+            assert mongo.db is not None, "Database not initialized"
             inserted = mongo.db.detections.insert_one(detection_doc)
             detections.append(
                 {

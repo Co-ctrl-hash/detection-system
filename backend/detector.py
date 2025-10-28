@@ -145,9 +145,10 @@ class PlateDetector:
             
             if results:
                 # Get result with highest confidence
-                best = max(results, key=lambda r: r[2])
-                text = best[1].strip().upper()
-                conf = float(best[2])
+                # EasyOCR returns list of tuples: (bbox, text, confidence)
+                best = max(results, key=lambda r: r[2])  # type: ignore[index]
+                text: str = best[1].strip().upper()  # type: ignore[index]
+                conf = float(best[2])  # type: ignore[index]
                 return text, conf
             else:
                 return "UNKNOWN", 0.0

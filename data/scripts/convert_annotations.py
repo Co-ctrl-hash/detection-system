@@ -53,15 +53,37 @@ def convert_xml_to_yolo(xml_path: Path, img_w: int, img_h: int, class_name: str 
     
     lines = []
     for obj in root.findall("object"):
-        name = obj.find("name").text
+        name_elem = obj.find("name")
+        if name_elem is None or name_elem.text is None:
+            continue
+        name = name_elem.text
         if name.lower() != class_name.lower():
             continue  # skip non-plate objects
         
         bbox = obj.find("bndbox")
-        x1 = int(bbox.find("xmin").text)
-        y1 = int(bbox.find("ymin").text)
-        x2 = int(bbox.find("xmax").text)
-        y2 = int(bbox.find("ymax").text)
+        if bbox is None:
+            continue
+            
+        xmin_elem = bbox.find("xmin")
+        ymin_elem = bbox.find("ymin")
+        xmax_elem = bbox.find("xmax")
+        ymax_elem = bbox.find("ymax")
+        
+        # Type-safe None checks for XML elements
+        if not all([xmin_elem is not None, ymin_elem is not None, 
+                    xmax_elem is not None, ymax_elem is not None]):
+            continue
+        
+        # Now we can safely assert these are not None
+        assert xmin_elem is not None and xmin_elem.text is not None
+        assert ymin_elem is not None and ymin_elem.text is not None
+        assert xmax_elem is not None and xmax_elem.text is not None
+        assert ymax_elem is not None and ymax_elem.text is not None
+            
+        x1 = int(xmin_elem.text)
+        y1 = int(ymin_elem.text)
+        x2 = int(xmax_elem.text)
+        y2 = int(ymax_elem.text)
         
         xc, yc, w, h = bbox_to_yolo(x1, y1, x2, y2, img_w, img_h)
         lines.append(f"0 {xc:.6f} {yc:.6f} {w:.6f} {h:.6f}")
@@ -125,6 +147,9 @@ def main():
             
             if img_path.exists():
                 img = cv2.imread(str(img_path))
+                if img is None:
+                    print(f"Warning: Could not read image {img_path}")
+                    continue
                 h, w = img.shape[:2]
                 lines = convert_xml_to_yolo(xml_path, w, h, args.class_name)
                 

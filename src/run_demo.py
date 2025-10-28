@@ -1,4 +1,4 @@
-"""Demo wrapper that runs the official YOLOv7 detect.py and then performs OCR on detected plates.
+r"""Demo wrapper that runs the official YOLOv7 detect.py and then performs OCR on detected plates.
 
 Usage (PowerShell):
 python src\run_demo.py --yolov7-dir external\yolov7 --weights models\yolov7.pt --source assets\test.jpg
