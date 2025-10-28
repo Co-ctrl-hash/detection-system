@@ -72,22 +72,27 @@ class PlateDetector:
         
         # Load model
         if attempt_load and Path(yolov7_weights).exists():
+            # Patch torch.load for PyTorch 2.6+ compatibility BEFORE attempting to load
+            import torch
+            original_load = torch.load
+            
+            def patched_load(*args, **kwargs):
+                # Force weights_only=False for YOLOv7 compatibility
+                kwargs['weights_only'] = False
+                return original_load(*args, **kwargs)
+            
+            torch.load = patched_load
+            
             try:
-                # Try loading with weights_only=False for PyTorch 2.6+ compatibility
                 self.model = attempt_load(yolov7_weights, map_location=self.device)
                 self.model.eval()
                 print(f"Model loaded: {yolov7_weights} on {self.device}")
             except Exception as e:
-                # Fallback: patch torch.load to use weights_only=False
-                import torch
-                original_load = torch.load
-                torch.load = lambda *args, **kwargs: original_load(*args, **{**kwargs, 'weights_only': False})
-                try:
-                    self.model = attempt_load(yolov7_weights, map_location=self.device)
-                    self.model.eval()
-                    print(f"Model loaded: {yolov7_weights} on {self.device}")
-                finally:
-                    torch.load = original_load
+                print(f"Error loading model: {e}")
+                raise
+            finally:
+                # Restore original torch.load
+                torch.load = original_load
         else:
             self.model = None
             print(f"Warning: Model not loaded. Weights not found or YOLOv7 not available.")
