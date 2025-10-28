@@ -1,4 +1,5 @@
-"""Flask backend for real-time number plate detection system.
+"""
+Flask backend for real-time number plate detection system.
 
 Endpoints:
 - POST /api/detect - Upload image/frame for detection
@@ -9,18 +10,22 @@ Endpoints:
 - GET /api/stats - Get detection statistics
 - WebSocket /ws/live - Real-time video stream processing
 """
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit
 from datetime import datetime
+from dotenv import load_dotenv
 import os
 import cv2
 import numpy as np
 import base64
 from pathlib import Path
 import sys
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -49,7 +54,8 @@ detector = PlateDetector(
 )
 
 # Create upload folder
-Path(app.config['UPLOAD_FOLDER']).mkdir(exist_ok=True)
+upload_folder = Path(app.config['UPLOAD_FOLDER'])
+upload_folder.mkdir(parents=True, exist_ok=True)
 
 # Create database tables
 with app.app_context():
@@ -61,7 +67,7 @@ def health_check():
     """Health check endpoint."""
     return jsonify({
         'status': 'healthy',
-        'model_loaded': detector.model is not None,
+        'model_loaded': getattr(detector, 'model', None) is not None,
         'timestamp': datetime.utcnow().isoformat()
     })
 
@@ -69,67 +75,80 @@ def health_check():
 @app.route('/api/detect', methods=['POST'])
 def detect_plate():
     """Detect plates in uploaded image.
-    
+
     Request:
         - file: image file (multipart/form-data)
         - camera_id: optional camera identifier
-    
+
     Response:
         - detections: list of detected plates with bbox, confidence, text
         - detection_id: database record ID
     """
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
-    
+
     file = request.files['file']
     camera_id = request.form.get('camera_id', 'default')
-    
-    if file.filename == '':
+
+    if not file or not file.filename:
         return jsonify({'error': 'Empty filename'}), 400
-    
+
     # Read image
     img_bytes = file.read()
     nparr = np.frombuffer(img_bytes, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    
+
     if img is None:
         return jsonify({'error': 'Invalid image format'}), 400
-    
-    # Run detection
-    results = detector.detect(img)
-    
+
+    # Run detection (ensure list)
+    results = detector.detect(img) or []
+
     # Save to database
     detection_records = []
     for result in results:
-        # Save cropped plate image
-        plate_img = result['plate_crop']
-        _, buffer = cv2.imencode('.jpg', plate_img)
+        # defensive access
+        plate_crop = result.get('plate_crop')
+        if plate_crop is None:
+            continue
+
+        # Save cropped plate image (base64)
+        ok, buffer = cv2.imencode('.jpg', plate_crop)
+        if not ok:
+            continue
         plate_img_b64 = base64.b64encode(buffer).decode('utf-8')
-        
-        detection = Detection(
-            plate_number=result['plate_text'],
-            confidence=result['confidence'],
-            camera_id=camera_id,
-            bbox_x1=result['bbox'][0],
-            bbox_y1=result['bbox'][1],
-            bbox_x2=result['bbox'][2],
-            bbox_y2=result['bbox'][3],
-            plate_image=plate_img_b64
-        )
+
+        # Create Detection instance then set attributes (avoids keyword-arg mismatch)
+        detection = Detection()
+        # Use .get with defaults, cast to expected primitive types
+        detection.plate_number = result.get('plate_text')
+        detection.confidence = float(result.get('confidence', 0.0))
+        detection.camera_id = camera_id
+        bbox = result.get('bbox', [0, 0, 0, 0])
+        try:
+            detection.bbox_x1 = float(bbox[0])
+            detection.bbox_y1 = float(bbox[1])
+            detection.bbox_x2 = float(bbox[2])
+            detection.bbox_y2 = float(bbox[3])
+        except Exception:
+            detection.bbox_x1 = detection.bbox_y1 = detection.bbox_x2 = detection.bbox_y2 = 0.0
+        detection.plate_image = plate_img_b64
+
         db.session.add(detection)
+
         detection_records.append({
-            'plate_number': result['plate_text'],
-            'confidence': float(result['confidence']),
-            'bbox': result['bbox'],
-            'ocr_confidence': float(result['ocr_confidence'])
+            'plate_number': result.get('plate_text'),
+            'confidence': float(result.get('confidence', 0.0)),
+            'bbox': bbox,
+            'ocr_confidence': float(result.get('ocr_confidence', 0.0))
         })
-    
+
     db.session.commit()
-    
+
     return jsonify({
         'success': True,
         'detections': detection_records,
-        'count': len(results),
+        'count': len(detection_records),
         'timestamp': datetime.utcnow().isoformat()
     })
 
@@ -137,74 +156,93 @@ def detect_plate():
 @app.route('/api/detect/video', methods=['POST'])
 def detect_video():
     """Process video file and detect plates in frames.
-    
+
     Request:
         - file: video file
         - camera_id: optional camera identifier
         - sample_rate: frames to skip (default: 5)
-    
+
     Response:
         - detections: list of all detections across frames
         - total_frames: number of frames processed
     """
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
-    
+
     file = request.files['file']
     camera_id = request.form.get('camera_id', 'default')
     sample_rate = int(request.form.get('sample_rate', 5))
-    
+
+    if not file or not file.filename:
+        return jsonify({'error': 'Empty filename'}), 400
+
     # Save video temporarily (use secure filename)
     filename = secure_filename(file.filename)
-    video_path = Path(app.config['UPLOAD_FOLDER']) / filename
+    video_path = upload_folder / filename
     file.save(str(video_path))
-    
+
     # Process video
     cap = cv2.VideoCapture(str(video_path))
     frame_count = 0
     all_detections = []
     processed_frames = 0
-    
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-        
-        # Sample frames
-        if frame_count % sample_rate == 0:
-            # guard in case frame is None (static analysis / runtime safety)
-            if frame is None:
+
+    try:
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
                 break
 
-            results = detector.detect(frame) or []
+            # guard in case frame is None
+            if frame is None:
+                frame_count += 1
+                continue
 
-            for result in results:
-                _, buffer = cv2.imencode('.jpg', result['plate_crop'])
-                plate_img_b64 = base64.b64encode(buffer).decode('utf-8')
+            # Sample frames
+            if frame_count % sample_rate == 0:
+                results = detector.detect(frame) or []
 
-                detection = Detection(
-                    plate_number=result['plate_text'],
-                    confidence=result['confidence'],
-                    camera_id=camera_id,
-                    bbox_x1=result['bbox'][0],
-                    bbox_y1=result['bbox'][1],
-                    bbox_x2=result['bbox'][2],
-                    bbox_y2=result['bbox'][3],
-                    plate_image=plate_img_b64
-                )
-                db.session.add(detection)
-                all_detections.append(result['plate_text'])
+                for result in results:
+                    plate_crop = result.get('plate_crop')
+                    if plate_crop is None:
+                        continue
 
-            processed_frames += 1
-        
-        frame_count += 1
-    
-    cap.release()
-    db.session.commit()
-    
-    # Clean up
-    video_path.unlink()
-    
+                    ok, buffer = cv2.imencode('.jpg', plate_crop)
+                    if not ok:
+                        continue
+                    plate_img_b64 = base64.b64encode(buffer).decode('utf-8')
+
+                    # Create Detection safely
+                    detection = Detection()
+                    detection.plate_number = result.get('plate_text')
+                    detection.confidence = float(result.get('confidence', 0.0))
+                    detection.camera_id = camera_id
+                    bbox = result.get('bbox', [0, 0, 0, 0])
+                    try:
+                        detection.bbox_x1 = float(bbox[0])
+                        detection.bbox_y1 = float(bbox[1])
+                        detection.bbox_x2 = float(bbox[2])
+                        detection.bbox_y2 = float(bbox[3])
+                    except Exception:
+                        detection.bbox_x1 = detection.bbox_y1 = detection.bbox_x2 = detection.bbox_y2 = 0.0
+                    detection.plate_image = plate_img_b64
+
+                    db.session.add(detection)
+                    all_detections.append(result.get('plate_text'))
+
+                processed_frames += 1
+
+            frame_count += 1
+    finally:
+        cap.release()
+        db.session.commit()
+        # Clean up safely
+        try:
+            if video_path.exists():
+                video_path.unlink()
+        except Exception:
+            pass
+
     return jsonify({
         'success': True,
         'total_frames': frame_count,
@@ -217,7 +255,7 @@ def detect_video():
 @app.route('/api/detections', methods=['GET'])
 def get_detections():
     """Get detection history with pagination and filters.
-    
+
     Query params:
         - page: page number (default: 1)
         - per_page: items per page (default: 50)
@@ -228,18 +266,18 @@ def get_detections():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 50, type=int)
     camera_id = request.args.get('camera_id')
-    
+
     query = Detection.query
-    
+
     if camera_id:
         query = query.filter_by(camera_id=camera_id)
-    
+
     # Date filters can be added here
-    
+
     pagination = query.order_by(Detection.id.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
-    
+
     return jsonify({
         'detections': [d.to_dict() for d in pagination.items],
         'total': pagination.total,
@@ -271,7 +309,7 @@ def get_stats():
     total = Detection.query.count()
     unique_plates = db.session.query(Detection.plate_number).distinct().count()
     cameras = db.session.query(Detection.camera_id).distinct().all()
-    
+
     return jsonify({
         'total_detections': total,
         'unique_plates': unique_plates,
@@ -289,19 +327,20 @@ def handle_connect():
 @socketio.on('video_frame')
 def handle_video_frame(data):
     """Process video frame from WebSocket.
-    
+
     Expected data:
         - frame: base64 encoded image
         - camera_id: camera identifier
     """
     try:
         # Validate payload
-        if 'frame' not in data:
+        frame_b64 = data.get('frame')
+        if not frame_b64:
             emit('error', {'message': 'No frame provided'})
             return
 
         # Decode frame
-        img_data = base64.b64decode(data['frame'])
+        img_data = base64.b64decode(frame_b64)
         nparr = np.frombuffer(img_data, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
@@ -316,35 +355,45 @@ def handle_video_frame(data):
         # Save to DB and emit results
         detections = []
         for result in results:
-            _, buffer = cv2.imencode('.jpg', result['plate_crop'])
+            plate_crop = result.get('plate_crop')
+            if plate_crop is None:
+                continue
+
+            ok, buffer = cv2.imencode('.jpg', plate_crop)
+            if not ok:
+                continue
             plate_img_b64 = base64.b64encode(buffer).decode('utf-8')
-            
-            detection = Detection(
-                plate_number=result['plate_text'],
-                confidence=result['confidence'],
-                camera_id=data.get('camera_id', 'live'),
-                bbox_x1=result['bbox'][0],
-                bbox_y1=result['bbox'][1],
-                bbox_x2=result['bbox'][2],
-                bbox_y2=result['bbox'][3],
-                plate_image=plate_img_b64
-            )
+
+            detection = Detection()
+            detection.plate_number = result.get('plate_text')
+            detection.confidence = float(result.get('confidence', 0.0))
+            detection.camera_id = data.get('camera_id', 'live')
+            bbox = result.get('bbox', [0, 0, 0, 0])
+            try:
+                detection.bbox_x1 = float(bbox[0])
+                detection.bbox_y1 = float(bbox[1])
+                detection.bbox_x2 = float(bbox[2])
+                detection.bbox_y2 = float(bbox[3])
+            except Exception:
+                detection.bbox_x1 = detection.bbox_y1 = detection.bbox_x2 = detection.bbox_y2 = 0.0
+            detection.plate_image = plate_img_b64
+
             db.session.add(detection)
-            
+
             detections.append({
-                'plate_number': result['plate_text'],
-                'confidence': float(result['confidence']),
-                'bbox': result['bbox']
+                'plate_number': result.get('plate_text'),
+                'confidence': float(result.get('confidence', 0.0)),
+                'bbox': bbox
             })
-        
+
         db.session.commit()
-        
+
         # Emit results back to client
         emit('detection_result', {
             'detections': detections,
             'timestamp': datetime.utcnow().isoformat()
         })
-        
+
     except Exception as e:
         emit('error', {'message': str(e)})
 

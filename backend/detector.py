@@ -37,7 +37,7 @@ class PlateDetector:
     def __init__(
         self,
         yolov7_weights: str = 'models/yolov7.pt',
-        device: str = '0',
+        device: str = 'cpu',  # Default to CPU to avoid CUDA errors
         conf_threshold: float = 0.25,
         iou_threshold: float = 0.45,
         img_size: int = 640
@@ -46,21 +46,48 @@ class PlateDetector:
         
         Args:
             yolov7_weights: Path to YOLOv7 weights file.
-            device: CUDA device ('0', '1', etc.) or 'cpu'.
+            device: CUDA device ('0', '1', etc.) or 'cpu'. Defaults to 'cpu'.
             conf_threshold: Confidence threshold for detections.
             iou_threshold: IoU threshold for NMS.
             img_size: Input image size.
         """
-        self.device = select_device(device) if attempt_load else 'cpu'
+        # Safe device selection - check CUDA availability
+        if attempt_load:
+            if device != 'cpu':
+                # Check if CUDA is available before using GPU
+                try:
+                    import torch
+                    if not torch.cuda.is_available():
+                        print(f"Warning: CUDA not available. Switching from device '{device}' to 'cpu'")
+                        device = 'cpu'
+                except Exception:
+                    device = 'cpu'
+            self.device = select_device(device)
+        else:
+            self.device = 'cpu'
+        
         self.conf_threshold = conf_threshold
         self.iou_threshold = iou_threshold
         self.img_size = img_size
         
         # Load model
         if attempt_load and Path(yolov7_weights).exists():
-            self.model = attempt_load(yolov7_weights, map_location=self.device)
-            self.model.eval()
-            print(f"Model loaded: {yolov7_weights} on {self.device}")
+            try:
+                # Try loading with weights_only=False for PyTorch 2.6+ compatibility
+                self.model = attempt_load(yolov7_weights, map_location=self.device)
+                self.model.eval()
+                print(f"Model loaded: {yolov7_weights} on {self.device}")
+            except Exception as e:
+                # Fallback: patch torch.load to use weights_only=False
+                import torch
+                original_load = torch.load
+                torch.load = lambda *args, **kwargs: original_load(*args, **{**kwargs, 'weights_only': False})
+                try:
+                    self.model = attempt_load(yolov7_weights, map_location=self.device)
+                    self.model.eval()
+                    print(f"Model loaded: {yolov7_weights} on {self.device}")
+                finally:
+                    torch.load = original_load
         else:
             self.model = None
             print(f"Warning: Model not loaded. Weights not found or YOLOv7 not available.")
