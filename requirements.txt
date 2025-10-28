@@ -16,6 +16,8 @@ pillow==10.1.0
 # Database
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9  # PostgreSQL adapter
+pymongo==4.6.1  # MongoDB driver
+flask-pymongo==2.3.0  # Flask-MongoDB integration
 
 # Utilities
 python-dotenv==1.0.0
