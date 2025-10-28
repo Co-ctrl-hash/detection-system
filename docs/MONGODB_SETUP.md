@@ -1,6 +1,30 @@
 # MongoDB Setup Guide
 
-This project supports MongoDB as an alternative NoSQL database option.
+✅ **MongoDB is now integrated and connected!**
+
+Your MongoDB Atlas database is configured and working:
+- **Connection**: `mongodb+srv://...@numberplatedetection.wcwef31.mongodb.net`
+- **Database**: `numberplate_detection`
+- **Status**: Connected and tested ✅
+
+## Quick Start
+
+### Current MongoDB Atlas Setup (Already Working!)
+
+Your database is already set up and connected. To use it:
+
+```powershell
+# Run the MongoDB version
+python backend/app_mongodb.py
+```
+
+Visit http://localhost:5000/api/health to verify:
+```json
+{
+  "status": "healthy",
+  "database": "connected"
+}
+```
 
 ## Why MongoDB?
 

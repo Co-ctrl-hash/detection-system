@@ -35,7 +35,10 @@ from backend.detector import PlateDetector
 app = Flask(__name__)
 
 # MongoDB Configuration
-app.config['MONGO_URI'] = os.getenv('MONGO_URI', 'mongodb://localhost:27017/plates_db')
+app.config['MONGO_URI'] = os.getenv(
+    'MONGO_URI',
+    'mongodb+srv://mukherjeenilima705_db_user:RkN3R5EwgJTpk9gJ@numberplatedetection.wcwef31.mongodb.net/numberplate_detection?retryWrites=true&w=majority&appName=NumberPlateDetection'
+)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
