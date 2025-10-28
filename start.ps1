@@ -7,17 +7,17 @@ Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Check if virtual environment exists
-if (-not (Test-Path ".venv")) {
+if (-not (Test-Path "venv")) {
     Write-Host "Virtual environment not found. Please run setup first:" -ForegroundColor Yellow
-    Write-Host "  python -m venv .venv" -ForegroundColor Yellow
-    Write-Host "  .\.venv\Scripts\Activate.ps1" -ForegroundColor Yellow
+    Write-Host "  python -m venv venv" -ForegroundColor Yellow
+    Write-Host "  .\venv\Scripts\Activate.ps1" -ForegroundColor Yellow
     Write-Host "  pip install -r requirements.txt" -ForegroundColor Yellow
     exit 1
 }
 
 # Activate virtual environment
 Write-Host "[1/4] Activating virtual environment..." -ForegroundColor Green
-& ".\.venv\Scripts\Activate.ps1"
+& ".\venv\Scripts\Activate.ps1"
 
 # Check if database exists
 if (-not (Test-Path "plates.db")) {
@@ -29,7 +29,7 @@ if (-not (Test-Path "plates.db")) {
 
 # Start backend in a new window
 Write-Host "[3/4] Starting backend server..." -ForegroundColor Green
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PWD'; .\.venv\Scripts\Activate.ps1; Write-Host 'Starting Flask Backend...' -ForegroundColor Cyan; python backend\app.py"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PWD'; .\venv\Scripts\Activate.ps1; Write-Host 'Starting Flask Backend with YOLOv7 (initial load takes ~20-30 seconds)...' -ForegroundColor Cyan; python start_server.py"
 
 # Wait a bit for backend to start
 Start-Sleep -Seconds 3
