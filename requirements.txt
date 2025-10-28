@@ -19,6 +19,7 @@ sqlalchemy==2.0.23
 # Utilities
 python-dotenv==1.0.0
 pyyaml==6.0.1
+kagglehub==0.3.13
 
 # NOTE: Install PyTorch separately matching your CUDA version
 # GPU (CUDA 11.8): pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118

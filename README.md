@@ -445,19 +445,28 @@ plate-detection-yolov7/
 
 ### Dataset Preparation
 
-1. Download public datasets:
+1. **Download Indian Number Plates Dataset from Kaggle** (Recommended):
+```powershell
+# Setup Kaggle API credentials first (see docs/KAGGLE_SETUP.md)
+python data/scripts/download_kaggle_dataset.py
+
+# Or download and organize automatically
+python data/scripts/download_kaggle_dataset.py --organize
+```
+
+2. **Alternative public datasets**:
    - [CCPD](https://github.com/detectRecog/CCPD) - Chinese City Parking Dataset
    - [UFPR-ALPR](https://web.inf.ufpr.br/vri/databases/ufpr-alpr/) - Brazilian plates
-   - OpenImages subset
+   - [Indian Number Plates](https://www.kaggle.com/datasets/dataclusterlabs/indian-number-plates-dataset) - Kaggle dataset
 
-2. Convert to YOLO format:
+3. Convert to YOLO format:
 ```powershell
 python data\scripts\convert_annotations.py --format ccpd --images-dir data\raw --output-dir data\plates\labels
 ```
 
-3. Update `data/plates/data.yaml` with paths
+4. Update `data/plates/data.yaml` with paths
 
-4. Train:
+5. Train:
 ```powershell
 python src\train.py --config configs\train_config.yaml
 ```
