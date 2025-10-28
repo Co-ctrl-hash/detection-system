@@ -10,6 +10,7 @@ Endpoints:
 - WebSocket /ws/live - Real-time video stream processing
 """
 from flask import Flask, request, jsonify, send_from_directory
+from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit
@@ -50,10 +51,8 @@ detector = PlateDetector(
 # Create upload folder
 Path(app.config['UPLOAD_FOLDER']).mkdir(exist_ok=True)
 
-
-@app.before_first_request
-def create_tables():
-    """Create database tables."""
+# Create database tables
+with app.app_context():
     db.create_all()
 
 
@@ -155,14 +154,16 @@ def detect_video():
     camera_id = request.form.get('camera_id', 'default')
     sample_rate = int(request.form.get('sample_rate', 5))
     
-    # Save video temporarily
-    video_path = Path(app.config['UPLOAD_FOLDER']) / file.filename
-    file.save(video_path)
+    # Save video temporarily (use secure filename)
+    filename = secure_filename(file.filename)
+    video_path = Path(app.config['UPLOAD_FOLDER']) / filename
+    file.save(str(video_path))
     
     # Process video
     cap = cv2.VideoCapture(str(video_path))
     frame_count = 0
     all_detections = []
+    processed_frames = 0
     
     while cap.isOpened():
         ret, frame = cap.read()
@@ -171,12 +172,16 @@ def detect_video():
         
         # Sample frames
         if frame_count % sample_rate == 0:
-            results = detector.detect(frame)
-            
+            # guard in case frame is None (static analysis / runtime safety)
+            if frame is None:
+                break
+
+            results = detector.detect(frame) or []
+
             for result in results:
                 _, buffer = cv2.imencode('.jpg', result['plate_crop'])
                 plate_img_b64 = base64.b64encode(buffer).decode('utf-8')
-                
+
                 detection = Detection(
                     plate_number=result['plate_text'],
                     confidence=result['confidence'],
@@ -189,6 +194,8 @@ def detect_video():
                 )
                 db.session.add(detection)
                 all_detections.append(result['plate_text'])
+
+            processed_frames += 1
         
         frame_count += 1
     
@@ -201,7 +208,7 @@ def detect_video():
     return jsonify({
         'success': True,
         'total_frames': frame_count,
-        'processed_frames': frame_count // sample_rate,
+        'processed_frames': processed_frames,
         'detections': all_detections,
         'unique_plates': len(set(all_detections))
     })
@@ -229,7 +236,7 @@ def get_detections():
     
     # Date filters can be added here
     
-    pagination = query.order_by(Detection.timestamp.desc()).paginate(
+    pagination = query.order_by(Detection.id.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
     
@@ -265,16 +272,10 @@ def get_stats():
     unique_plates = db.session.query(Detection.plate_number).distinct().count()
     cameras = db.session.query(Detection.camera_id).distinct().all()
     
-    # Recent detections (last 24 hours)
-    from datetime import timedelta
-    yesterday = datetime.utcnow() - timedelta(days=1)
-    recent = Detection.query.filter(Detection.timestamp >= yesterday).count()
-    
     return jsonify({
         'total_detections': total,
         'unique_plates': unique_plates,
-        'cameras': [c[0] for c in cameras],
-        'recent_24h': recent
+        'cameras': [c[0] for c in cameras]
     })
 
 
@@ -294,14 +295,24 @@ def handle_video_frame(data):
         - camera_id: camera identifier
     """
     try:
+        # Validate payload
+        if 'frame' not in data:
+            emit('error', {'message': 'No frame provided'})
+            return
+
         # Decode frame
         img_data = base64.b64decode(data['frame'])
         nparr = np.frombuffer(img_data, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
+
+        # Guard: ensure decode succeeded
+        if img is None:
+            emit('error', {'message': 'Invalid frame data'})
+            return
+
         # Detect plates
-        results = detector.detect(img)
-        
+        results = detector.detect(img) or []
+
         # Save to DB and emit results
         detections = []
         for result in results:
